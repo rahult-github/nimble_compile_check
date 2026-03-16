@@ -73,6 +73,7 @@ EXAMPLE_REQUIRED_CONFIGS: dict[str, dict[str, str]] = {
     },
     'ble_periodic_adv': {
         'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'y',
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
     },
     'ble_periodic_sync': {
         'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'y',
@@ -94,6 +95,11 @@ EXAMPLE_REQUIRED_CONFIGS: dict[str, dict[str, str]] = {
     'blufi': {
         'BT_NIMBLE_BLUFI_ENABLE': 'y',
         'BT_NIMBLE_ENABLED': 'y',
+        'BT_BLUEDROID_ENABLED': 'n',
+        'BT_NIMBLE_EXT_ADV': 'n',
+        'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'n',
+        'BT_NIMBLE_GATT_SERVER': 'y',
+        'BT_NIMBLE_GAP_SERVICE': 'y',
     },
     'ble_multi_adv': {
         'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
@@ -139,6 +145,9 @@ EXCLUDED_EXAMPLES: set[str] = {
 TARGET_REQUIRED_CONFIGS: dict[str, dict[str, str]] = {
     'esp32': {
         'BT_NIMBLE_LEGACY_VHCI_ENABLE': 'y',
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'n',
+        'BT_NIMBLE_EXT_ADV': 'n',
+        'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'n',
     },
     'esp32c3': {
         'BT_NIMBLE_LEGACY_VHCI_ENABLE': 'y',
@@ -398,15 +407,30 @@ def _is_ignored_flag(name: str) -> bool:
 def _find_required_conflicts(
     toggles: list[tuple[str, str]],
     required_configs: dict[str, str],
+    flag_defaults: dict[str, str],
+    example_defaults: dict[str, str] | None = None,
 ) -> list[tuple[str, str, str]]:
-    """Return conflicts as (config_name, required_val, toggled_val)."""
+    """Return conflicts as (config_name, required_val, effective_val)."""
+    conflicts: list[tuple[str, str, str]] = []
+    for req_name, req_val in required_configs.items():
+        req_norm = _normalize_cfg_name(req_name)
+        effective_val = _effective_config_value(req_norm, toggles, flag_defaults, example_defaults)
+        if effective_val is not None and effective_val != req_val:
+            conflicts.append((req_norm, req_val, effective_val))
+    return conflicts
+
+
+def _find_required_conflicts_explicit_only(
+    toggles: list[tuple[str, str]],
+    required_configs: dict[str, str],
+) -> list[tuple[str, str, str]]:
+    """Return conflicts only when a config is explicitly toggled to a conflicting value."""
     toggle_map = {_normalize_cfg_name(name): val for name, val in toggles}
     conflicts: list[tuple[str, str, str]] = []
     for req_name, req_val in required_configs.items():
         req_norm = _normalize_cfg_name(req_name)
-        val = toggle_map.get(req_norm)
-        if val is not None and val != req_val:
-            conflicts.append((req_norm, req_val, val))
+        if req_norm in toggle_map and toggle_map[req_norm] != req_val:
+            conflicts.append((req_norm, req_val, toggle_map[req_norm]))
     return conflicts
 
 
@@ -431,6 +455,7 @@ def _effective_config_value(
     config_name: str,
     toggles: list[tuple[str, str]],
     flag_defaults: dict[str, str],
+    example_defaults: dict[str, str] | None = None,
 ) -> str | None:
     norm = _normalize_cfg_name(config_name)
     toggle_map = {_normalize_cfg_name(name): val for name, val in toggles}
@@ -438,6 +463,8 @@ def _effective_config_value(
         return toggle_map[norm]
     if norm in BASE_CONFIG_DEFAULTS:
         return BASE_CONFIG_DEFAULTS[norm]
+    if example_defaults and norm in example_defaults:
+        return example_defaults[norm]
     return flag_defaults.get(norm)
 
 
@@ -445,18 +472,19 @@ def _violates_example_constraints(
     example_name: str,
     toggles: list[tuple[str, str]],
     flag_defaults: dict[str, str],
+    example_defaults: dict[str, str] | None = None,
 ) -> list[str]:
     """Return per-example/folder constraint violations for this variant."""
     normalized = normalize_example_name(example_name)
     if normalized == 'hci' or normalized.startswith('hci/'):
-        bt_enabled = _effective_config_value('BT_ENABLED', toggles, flag_defaults)
-        nimble_enabled = _effective_config_value('BT_NIMBLE_ENABLED', toggles, flag_defaults)
+        bt_enabled = _effective_config_value('BT_ENABLED', toggles, flag_defaults, example_defaults)
+        nimble_enabled = _effective_config_value('BT_NIMBLE_ENABLED', toggles, flag_defaults, example_defaults)
         if bt_enabled == 'y' or nimble_enabled == 'y':
             return ['HCI examples must keep BT_ENABLED=n and BT_NIMBLE_ENABLED=n.']
         for cfg_name in flag_defaults:
             if not cfg_name.startswith('BT_NIMBLE'):
                 continue
-            if _effective_config_value(cfg_name, toggles, flag_defaults) == 'y':
+            if _effective_config_value(cfg_name, toggles, flag_defaults, example_defaults) == 'y':
                 return ['HCI examples must keep all BT_NIMBLE* options disabled.']
     return []
 
@@ -672,6 +700,41 @@ def resolve_example_path(idf_path: str, example_name: str) -> str:
     return nimble_path
 
 
+def _parse_sdkconfig_defaults_file(path: str) -> dict[str, str]:
+    vals: dict[str, str] = {}
+    if not os.path.isfile(path):
+        return vals
+    try:
+        with open(path) as f:
+            for raw in f:
+                line = raw.strip()
+                if not line:
+                    continue
+                m_set = re.match(r'^CONFIG_(\w+)=(y|n)$', line)
+                if m_set:
+                    vals[m_set.group(1)] = m_set.group(2)
+                    continue
+                m_unset = re.match(r'^#\s*CONFIG_(\w+)\s+is\s+not\s+set$', line)
+                if m_unset:
+                    vals[m_unset.group(1)] = 'n'
+    except OSError:
+        return vals
+    return vals
+
+
+def get_example_defaults_values(example_path: str, target: str) -> dict[str, str]:
+    vals = _parse_sdkconfig_defaults_file(os.path.join(example_path, 'sdkconfig.defaults'))
+    vals.update(_parse_sdkconfig_defaults_file(os.path.join(example_path, f'sdkconfig.defaults.{target}')))
+    if os.path.basename(example_path) == 'blufi':
+        # Force NimBLE BLUFI enablement across targets for this checker workflow.
+        vals['BT_NIMBLE_BLUFI_ENABLE'] = 'y'
+        vals['BT_NIMBLE_ENABLED'] = 'y'
+        vals['BT_BLUEDROID_ENABLED'] = 'n'
+        vals['BT_NIMBLE_EXT_ADV'] = 'n'
+        vals['BT_NIMBLE_ENABLE_PERIODIC_ADV'] = 'n'
+    return vals
+
+
 def get_example_required_configs(example_name: str) -> dict[str, str]:
     base = dict(EXAMPLE_REQUIRED_CONFIGS.get(normalize_example_name(example_name), {}))
     if base.get('BT_NIMBLE_GATT_SERVER') == 'y':
@@ -776,8 +839,28 @@ def run_build(
     if _idf_env_cache is None:
         _idf_env_cache = _get_idf_env(idf_path)
 
+    defaults_files: list[str] = []
     example_defaults = os.path.join(example_path, 'sdkconfig.defaults')
-    sdkconfig_defaults = example_defaults if sdkconfig_path is None else f'{example_defaults};{sdkconfig_path}'
+    target_defaults = os.path.join(example_path, f'sdkconfig.defaults.{target}')
+    if os.path.isfile(example_defaults):
+        defaults_files.append(example_defaults)
+    if os.path.isfile(target_defaults):
+        defaults_files.append(target_defaults)
+    if os.path.basename(example_path) == 'blufi':
+        # Force NimBLE BLUFI for all targets in this checker.
+        forced_dir = os.path.dirname(sdkconfig_path) if sdkconfig_path else os.path.dirname(build_dir)
+        os.makedirs(forced_dir, exist_ok=True)
+        forced_defaults = os.path.join(forced_dir, f'sdkconfig.forced.blufi.{target}')
+        with open(forced_defaults, 'w') as f:
+            f.write('CONFIG_BT_NIMBLE_BLUFI_ENABLE=y\n')
+            f.write('CONFIG_BT_NIMBLE_ENABLED=y\n')
+            f.write('# CONFIG_BT_BLUEDROID_ENABLED is not set\n')
+            f.write('CONFIG_BT_NIMBLE_EXT_ADV=n\n')
+            f.write('CONFIG_BT_NIMBLE_ENABLE_PERIODIC_ADV=n\n')
+        defaults_files.append(forced_defaults)
+    if sdkconfig_path is not None:
+        defaults_files.append(sdkconfig_path)
+    sdkconfig_defaults = ';'.join(defaults_files)
 
     # Use 'python' from the IDF environment
     python = shutil.which('python', path=_idf_env_cache.get('PATH', '')) or 'python'
@@ -1213,6 +1296,7 @@ def main() -> None:
 
         # Pre-compute supported targets for each example
         example_targets: dict[str, list[str] | None] = {}
+        example_default_vals: dict[tuple[str, str], dict[str, str]] = {}
         for ename in example_names:
             example_targets[ename] = get_example_supported_targets(idf_path, ename)
 
@@ -1244,6 +1328,10 @@ def main() -> None:
                     if target in denylist:
                         skipped_deny += 1
                         continue
+                    defaults_key = (ename, target)
+                    if defaults_key not in example_default_vals:
+                        example_default_vals[defaults_key] = get_example_defaults_values(example_path, target)
+                    per_example_defaults = example_default_vals[defaults_key]
                     if not args.default_only:
                         violations = _violates_global_constraints(toggles_map[vname], flag_defaults)
                         if violations:
@@ -1251,7 +1339,9 @@ def main() -> None:
                             if len(global_constraint_examples) < 8:
                                 global_constraint_examples.append(f'{target}/{ename}/{vname}: {violations[0]}')
                             continue
-                        example_violations = _violates_example_constraints(ename, toggles_map[vname], flag_defaults)
+                        example_violations = _violates_example_constraints(
+                            ename, toggles_map[vname], flag_defaults, per_example_defaults
+                        )
                         if example_violations:
                             skipped_example_constraints += 1
                             if len(example_constraint_examples) < 8:
@@ -1259,10 +1349,18 @@ def main() -> None:
                             continue
                         required_cfg = get_example_required_configs(ename)
                         target_required_cfg = get_target_required_configs(target)
-                        if target_required_cfg:
-                            required_cfg = {**required_cfg, **target_required_cfg}
+                        conflicts: list[tuple[str, str, str]] = []
                         if required_cfg:
-                            conflicts = _find_required_conflicts(toggles_map[vname], required_cfg)
+                            conflicts.extend(
+                                _find_required_conflicts(
+                                    toggles_map[vname], required_cfg, flag_defaults, per_example_defaults
+                                )
+                            )
+                        if target_required_cfg:
+                            conflicts.extend(
+                                _find_required_conflicts_explicit_only(toggles_map[vname], target_required_cfg)
+                            )
+                        if conflicts:
                             if conflicts:
                                 skipped_conflicts += 1
                                 if len(conflict_examples) < 8:
