@@ -67,7 +67,7 @@ python tools/bt/nimble_compile_check.py [OPTIONS]
 | `--all-targets` | off | Build all BLE-supported targets |
 | `--groups G1,G2,...` | all groups | Restrict tested groups |
 | `--examples E1,E2,...` | `bleprph,blecent` | Example list |
-| `--all-examples` | off | Discover all top-level NimBLE examples (`examples/bluetooth/nimble/*`) |
+| `--all-examples` | off | Discover all NimBLE example projects under `examples/bluetooth/nimble/` (nested apps included, e.g. `ble_spp/spp_server`) |
 | `--parallel N` | `1` | Parallel build count |
 | `--output FILE` | stdout | Write summary report to file |
 | `--keep-builds` | off | Keep build artifacts under temporary root |
@@ -312,5 +312,7 @@ Constraint dictionaries and policy sets live near the top of the script:
 - `TARGET_REQUIRED_CONFIGS`
 
 When adding new known-invalid combinations, update these dictionaries first.
+
+`--all-examples` / `--list-examples` walk `examples/bluetooth/nimble` recursively and pick directories whose `CMakeLists.txt` contains `project(...)`. Nested names use a slash: `ble_spp/spp_server`. Log and build-dir names replace `/` with `_`.
 
 Example path resolution also supports selected Bluetooth examples outside `examples/bluetooth/nimble/*` (for example `examples/bluetooth/blufi`).

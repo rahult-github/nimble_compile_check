@@ -45,6 +45,7 @@ BLE_SUPPORTED_TARGETS = [
     'esp32c61',
     'esp32h2',
     'esp32s3',
+    'esp32s31',
 ]
 
 # Example-specific required NimBLE configs.
@@ -109,6 +110,141 @@ EXAMPLE_REQUIRED_CONFIGS: dict[str, dict[str, str]] = {
     'ble_perioidic_adv': {
         'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'y',
     },
+    'ble_cte/ble_periodic_adv_with_cte': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'y',
+        'BT_NIMBLE_AOA_AOD': 'y',
+    },
+    'ble_cte/ble_periodic_sync_with_cte': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_AOA_AOD': 'y',
+    },
+    'ble_cts/cts_cent': {
+        'BT_NIMBLE_GATT_CLIENT': 'y',
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+    },
+    'ble_cts/cts_prph': {
+        'BT_NIMBLE_GATT_SERVER': 'y',
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+        'BT_NIMBLE_CTS_SERVICE': 'y',
+    },
+    'ble_enc_adv_data/enc_adv_data_cent': {
+        'BT_NIMBLE_GATT_CLIENT': 'y',
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+    },
+    'ble_enc_adv_data/enc_adv_data_prph': {
+        'BT_NIMBLE_GATT_SERVER': 'y',
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+    },
+    'ble_htp/htp_cent': {
+        'BT_NIMBLE_GATT_CLIENT': 'y',
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+    },
+    'ble_htp/htp_prph': {
+        'BT_NIMBLE_GATT_SERVER': 'y',
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+        'BT_NIMBLE_HTP_SERVICE': 'y',
+    },
+    'ble_l2cap_coc/coc_blecent': {
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+    },
+    'ble_l2cap_coc/coc_bleprph': {
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+        'BT_NIMBLE_GATT_SERVER': 'y',
+    },
+    'ble_multi_conn/ble_multi_conn_cent': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+        'BT_NIMBLE_GATT_CLIENT': 'y',
+    },
+    'ble_multi_conn/ble_multi_conn_prph': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+        'BT_NIMBLE_GATT_SERVER': 'y',
+    },
+    'ble_pawr_adv/ble_pawr_adv': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'y',
+        'BT_NIMBLE_PERIODIC_ADV_WITH_RESPONSES': 'y',
+    },
+    'ble_pawr_adv/ble_pawr_sync': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'y',
+        'BT_NIMBLE_PERIODIC_ADV_WITH_RESPONSES': 'y',
+    },
+    'ble_pawr_adv_conn/ble_pawr_adv_conn': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'y',
+        'BT_NIMBLE_PERIODIC_ADV_WITH_RESPONSES': 'y',
+    },
+    'ble_pawr_adv_conn/ble_pawr_sync_conn': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_ENABLE_PERIODIC_ADV': 'y',
+        'BT_NIMBLE_PERIODIC_ADV_WITH_RESPONSES': 'y',
+    },
+    'ble_phy/phy_cent': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+        'BT_NIMBLE_GATT_CLIENT': 'y',
+    },
+    'ble_phy/phy_prph': {
+        'BT_NIMBLE_50_FEATURE_SUPPORT': 'y',
+        'BT_NIMBLE_EXT_ADV': 'y',
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+        'BT_NIMBLE_GATT_SERVER': 'y',
+    },
+    'ble_proximity_sensor/proximity_sensor_cent': {
+        'BT_NIMBLE_GATT_CLIENT': 'y',
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+    },
+    'ble_proximity_sensor/proximity_sensor_prph': {
+        'BT_NIMBLE_GATT_SERVER': 'y',
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+        'BT_NIMBLE_PROX_SERVICE': 'y',
+    },
+    'ble_spp/spp_client': {
+        'BT_NIMBLE_GATT_CLIENT': 'y',
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+    },
+    'ble_spp/spp_server': {
+        'BT_NIMBLE_GATT_SERVER': 'y',
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+    },
+    'throughput_app/gatt/blecent_throughput': {
+        'BT_NIMBLE_GATT_CLIENT': 'y',
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+    },
+    'throughput_app/gatt/bleprph_throughput': {
+        'BT_NIMBLE_GATT_SERVER': 'y',
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+    },
+    'throughput_app/l2cap_coc/l2cap_coc_cent': {
+        'BT_NIMBLE_ROLE_CENTRAL': 'y',
+    },
+    'throughput_app/l2cap_coc/l2cap_coc_prph': {
+        'BT_NIMBLE_ROLE_PERIPHERAL': 'y',
+        'BT_NIMBLE_GATT_SERVER': 'y',
+    },
+}
+
+# Directories that are never themselves IDF example projects.
+_EXAMPLE_WALK_SKIP_DIRS = {
+    'main',
+    'common',
+    'common_components',
+    'components',
+    'managed_components',
+    'build',
+    '__pycache__',
 }
 
 # Optional per-example hard target allowlist override.
@@ -650,16 +786,40 @@ def build_flag_combo_variants(
 # ---------------------------------------------------------------------------
 
 
+def _is_idf_project(cmake_path: str) -> bool:
+    """True if CMakeLists.txt defines an IDF project() (not a component)."""
+    try:
+        with open(cmake_path) as f:
+            for line in f:
+                if re.match(r'^\s*project\s*\(', line):
+                    return True
+    except OSError:
+        return False
+    return False
+
+
 def discover_examples(idf_path: str) -> list[str]:
-    """Find buildable example directories covered by this checker."""
+    """Find buildable example directories covered by this checker.
+
+    Walks examples/bluetooth/nimble recursively so nested apps
+    (ble_spp/spp_server, throughput_app/gatt/bleprph_throughput, ...)
+    are included, not only top-level folders.
+    """
     nimble_examples_dir = os.path.join(idf_path, 'examples', 'bluetooth', 'nimble')
     examples: list[str] = []
-    if not os.path.isdir(nimble_examples_dir):
-        return examples
-    for entry in sorted(os.listdir(nimble_examples_dir)):
-        entry_path = os.path.join(nimble_examples_dir, entry)
-        if os.path.isdir(entry_path) and os.path.isfile(os.path.join(entry_path, 'CMakeLists.txt')):
-            examples.append(entry)
+    if os.path.isdir(nimble_examples_dir):
+        for dirpath, dirnames, filenames in os.walk(nimble_examples_dir):
+            dirnames[:] = sorted(
+                d for d in dirnames if d not in _EXAMPLE_WALK_SKIP_DIRS and not d.startswith('.')
+            )
+            if 'CMakeLists.txt' not in filenames:
+                continue
+            cmake_path = os.path.join(dirpath, 'CMakeLists.txt')
+            if not _is_idf_project(cmake_path):
+                continue
+            rel = os.path.relpath(dirpath, nimble_examples_dir)
+            examples.append('.' if rel == '.' else rel)
+        examples.sort()
 
     # Include selected non-nimble-folder examples that are part of NimBLE coverage.
     blufi_path = os.path.join(idf_path, 'examples', 'bluetooth', 'blufi')
@@ -675,6 +835,11 @@ def normalize_example_name(example_name: str) -> str:
     if normalized.startswith('examples/bluetooth/'):
         return normalized[len('examples/bluetooth/') :]
     return normalized
+
+
+def example_artifact_name(example_name: str) -> str:
+    """Filesystem-safe example id (nested paths use '_' not '/')."""
+    return normalize_example_name(example_name).replace('/', '_')
 
 
 def resolve_example_path(idf_path: str, example_name: str) -> str:
@@ -874,9 +1039,11 @@ def run_build(
         '-B',
         build_dir,
         f'-DSDKCONFIG_DEFAULTS={sdkconfig_defaults}',
-        'set-target',
-        target,
     ]
+    if target == 'esp32s31':
+        cmd.extend(['--preview', 'set-target', target])
+    else:
+        cmd.extend(['set-target', target])
 
     # Run set-target
     result = subprocess.run(cmd, capture_output=True, text=True, env=_idf_env_cache, timeout=300)
@@ -925,7 +1092,7 @@ def _do_single_build(
 ) -> tuple[str, str, str, bool, list[str], str]:
     """Wrapper for parallel execution. args is a tuple of build params."""
     variant_name, example_name, target, idf_path, example_path, sdkconfig_path, build_dir, logs_dir, keep_builds = args
-    log_file = os.path.join(logs_dir, f'{target}_{example_name}_{variant_name}.log')
+    log_file = os.path.join(logs_dir, f'{target}_{example_artifact_name(example_name)}_{variant_name}.log')
 
     # Read the sdkconfig toggles so they can be included in the log
     if sdkconfig_path is None:
@@ -1063,10 +1230,15 @@ def main() -> None:
     )
     parser.add_argument('--groups', default=None, help='Comma-separated list of groups to test (default: all)')
     parser.add_argument(
-        '--examples', default='bleprph,blecent', help='Comma-separated example names (default: bleprph,blecent)'
+        '--examples',
+        default='bleprph,blecent',
+        help='Comma-separated example names or nested paths (default: bleprph,blecent). '
+        'Example: bleprph,ble_spp/spp_server',
     )
     parser.add_argument(
-        '--all-examples', action='store_true', help='Build all NimBLE examples found under examples/bluetooth/nimble/'
+        '--all-examples',
+        action='store_true',
+        help='Build all NimBLE example projects under examples/bluetooth/nimble/ (nested apps included)',
     )
     parser.add_argument(
         '--list-flags', action='store_true', help='Parse Kconfig.in and print all bool flags, then exit'
@@ -1371,7 +1543,7 @@ def main() -> None:
                                         f'variant sets {actual_val}'
                                     )
                                 continue
-                    build_dir = os.path.join(builds_dir, f'{target}_{vname}_{ename}')
+                    build_dir = os.path.join(builds_dir, f'{target}_{vname}_{example_artifact_name(ename)}')
                     build_tasks.append(
                         (
                             vname,
